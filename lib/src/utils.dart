@@ -19,7 +19,7 @@ void assertPlatformIsSupported() {
   );
 
   // TODO: Support iOS
-  assert(Platform.isAndroid, 'Android is the only supported platform for now');
+  //assert(Platform.isAndroid, 'Android is the only supported platform for now');
 }
 
 /// Assert the Mobile Ads SDK is initialized.
@@ -192,6 +192,7 @@ abstract class LoadShowAd<T> with UniqueKeyMixin {
   MethodChannel channel;
 
   bool _disposed = false;
+
   /// Check if the ad is loaded
   bool get isDisposed => _disposed;
 

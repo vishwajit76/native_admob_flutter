@@ -8,11 +8,12 @@ import 'screens/banner_ads.dart';
 void main() async {
   /// Make sure you add this line here, so the plugin can access the native side
   WidgetsFlutterBinding.ensureInitialized();
+
   /// Make sure to initialize the MobileAds sdk. It returns a future
   /// that will be completed as soon as it initializes
   await MobileAds.initialize();
   // This is my device id. Ad yours here
-  MobileAds.setTestDeviceIds(['9345804C1E5B8F0871DFE29CA0758842']);
+  //MobileAds.setTestDeviceIds(['9345804C1E5B8F0871DFE29CA0758842']);
   /// Run the app
   runApp(MyApp());
 }
@@ -43,7 +44,7 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   /// Init the controller
-  /// 
+  ///
   /// You don't need to dispose it, the BannerAd widget will
   /// do the job for you
   final bannerController = BannerAdController();
@@ -69,51 +70,53 @@ class _MyHomePageState extends State<MyHomePage> {
 
   @override
   Widget build(BuildContext context) {
-    return DefaultTabController(
-      length: 3,
-      child: Scaffold(
-        backgroundColor: Colors.deepPurple,
-        appBar: AppBar(
-          title: Text('Ads demo'),
-          centerTitle: true,
-        ),
-        body: Stack(
-          children: [
-            Padding(
-              padding: EdgeInsets.only(bottom: bannerAdHeight),
-              child: TabBarView(
-                children: [NativeAds(), BannerAds(), FullScreenAds()],
-              ),
-            ),
-            /// Here's an example of how you can use a BannerAd in the
-            /// bottom of the screen, since it's the recommended way.
-            /// Make sure to use the adaptive banner size (default) to
-            /// the banner ad fit the best
-            /// 
-            /// Sometimes an banner ad can have a black background, that's
-            /// expected. Make sure to add an opaque background to your banner
-            /// ad (using builder or whatever)
-            Positioned(
-              bottom: 0,
-              left: 0,
-              right: 0,
-              child: BannerAd(controller: bannerController),
-            ),
-          ],
-        ),
-        bottomNavigationBar: Container(
-          color: Colors.blue,
-          child: TabBar(
-            indicatorColor: Colors.white,
-            indicatorSize: TabBarIndicatorSize.label,
-            tabs: [
-              Tab(text: 'Native Ads'),
-              Tab(text: 'Banner Ads'),
-              Tab(text: 'Full Screen Ads'),
-            ],
-          ),
-        ),
-      ),
-    );
+    return FullScreenAds();
+    // DefaultTabController(
+    //   length: 3,
+    //   child: Scaffold(
+    //     backgroundColor: Colors.deepPurple,
+    //     appBar: AppBar(
+    //       title: Text('Ads demo'),
+    //       centerTitle: true,
+    //     ),
+    //     body: Stack(
+    //       children: [
+    //         Padding(
+    //           padding: EdgeInsets.only(bottom: bannerAdHeight),
+    //           child: TabBarView(
+    //             children: [NativeAds(), BannerAds(), FullScreenAds()],
+    //           ),
+    //         ),
+
+    //         /// Here's an example of how you can use a BannerAd in the
+    //         /// bottom of the screen, since it's the recommended way.
+    //         /// Make sure to use the adaptive banner size (default) to
+    //         /// the banner ad fit the best
+    //         ///
+    //         /// Sometimes an banner ad can have a black background, that's
+    //         /// expected. Make sure to add an opaque background to your banner
+    //         /// ad (using builder or whatever)
+    //         Positioned(
+    //           bottom: 0,
+    //           left: 0,
+    //           right: 0,
+    //           child: BannerAd(controller: bannerController),
+    //         ),
+    //       ],
+    //     ),
+    //     bottomNavigationBar: Container(
+    //       color: Colors.blue,
+    //       child: TabBar(
+    //         indicatorColor: Colors.white,
+    //         indicatorSize: TabBarIndicatorSize.label,
+    //         tabs: [
+    //           Tab(text: 'Native Ads'),
+    //           Tab(text: 'Banner Ads'),
+    //           Tab(text: 'Full Screen Ads'),
+    //         ],
+    //       ),
+    //     ),
+    //   ),
+    // );
   }
 }
