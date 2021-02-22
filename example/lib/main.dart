@@ -13,7 +13,8 @@ void main() async {
   /// that will be completed as soon as it initializes
   await MobileAds.initialize();
   // This is my device id. Ad yours here
-  //MobileAds.setTestDeviceIds(['9345804C1E5B8F0871DFE29CA0758842']);
+  MobileAds.setTestDeviceIds(['9345804C1E5B8F0871DFE29CA0758842']);
+
   /// Run the app
   runApp(MyApp());
 }
@@ -44,79 +45,91 @@ class MyHomePage extends StatefulWidget {
 
 class _MyHomePageState extends State<MyHomePage> {
   /// Init the controller
-  ///
-  /// You don't need to dispose it, the BannerAd widget will
-  /// do the job for you
   final bannerController = BannerAdController();
 
   /// The banner height
-  double bannerAdHeight = 0;
+  // double _bannerAdHeight = 0;
 
   @override
   void initState() {
     super.initState();
     bannerController.onEvent.listen((e) {
       final event = e.keys.first;
-      final info = e.values.first;
+      // final info = e.values.first;
       switch (event) {
         case BannerAdEvent.loaded:
-          setState(() => bannerAdHeight = (info as int)?.toDouble());
+          // setState(() => _bannerAdHeight = (info as int)?.toDouble());
           break;
         default:
           break;
       }
     });
+    bannerController.load();
+  }
+
+  @override
+  void dispose() {
+    bannerController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return FullScreenAds();
-    // DefaultTabController(
-    //   length: 3,
-    //   child: Scaffold(
-    //     backgroundColor: Colors.deepPurple,
-    //     appBar: AppBar(
-    //       title: Text('Ads demo'),
-    //       centerTitle: true,
-    //     ),
-    //     body: Stack(
-    //       children: [
-    //         Padding(
-    //           padding: EdgeInsets.only(bottom: bannerAdHeight),
-    //           child: TabBarView(
-    //             children: [NativeAds(), BannerAds(), FullScreenAds()],
-    //           ),
-    //         ),
+    return DefaultTabController(
+      length: 3,
+      child: Scaffold(
+        backgroundColor: Colors.deepPurple,
+        appBar: AppBar(
+          title: Text('Ads demo'),
+          centerTitle: true,
+          actions: [
+            IconButton(
+              icon: Icon(Icons.navigate_next),
+              onPressed: () {
+                Navigator.of(context).push(MaterialPageRoute(
+                  builder: (_) => Scaffold(
+                    appBar: AppBar(title: Text('Native Ads')),
+                    body: NativeAds(),
+                  ),
+                ));
+              },
+            ),
+          ],
+        ),
+        body: Column(
+          children: [
+            Expanded(
+              child: TabBarView(
+                children: [NativeAds(), BannerAds(), FullScreenAds()],
+              ),
+            ),
 
-    //         /// Here's an example of how you can use a BannerAd in the
-    //         /// bottom of the screen, since it's the recommended way.
-    //         /// Make sure to use the adaptive banner size (default) to
-    //         /// the banner ad fit the best
-    //         ///
-    //         /// Sometimes an banner ad can have a black background, that's
-    //         /// expected. Make sure to add an opaque background to your banner
-    //         /// ad (using builder or whatever)
-    //         Positioned(
-    //           bottom: 0,
-    //           left: 0,
-    //           right: 0,
-    //           child: BannerAd(controller: bannerController),
-    //         ),
-    //       ],
-    //     ),
-    //     bottomNavigationBar: Container(
-    //       color: Colors.blue,
-    //       child: TabBar(
-    //         indicatorColor: Colors.white,
-    //         indicatorSize: TabBarIndicatorSize.label,
-    //         tabs: [
-    //           Tab(text: 'Native Ads'),
-    //           Tab(text: 'Banner Ads'),
-    //           Tab(text: 'Full Screen Ads'),
-    //         ],
-    //       ),
-    //     ),
-    //   ),
-    // );
+            /// Here's an example of how you can use a BannerAd in the
+            /// bottom of the screen and above the navigation bar,
+            /// since it's the recommended way. You can move this widget
+            /// to the top of the list ([]) to use it in the top.
+            /// Make sure to use the adaptive banner size (default) to
+            /// the banner ad fit the best
+            ///
+            /// Sometimes an banner ad can have a black background, that's
+            /// expected. Make sure to add an opaque background to your banner
+            /// ad (using builder or whatever)
+            BannerAd(controller: bannerController),
+          ],
+        ),
+        bottomNavigationBar: Container(
+          color: Colors.blue,
+          child: TabBar(
+            indicatorColor: Colors.white,
+            indicatorSize: TabBarIndicatorSize.label,
+            tabs: [
+              Tab(text: 'Native Ads'),
+              Tab(text: 'Banner Ads'),
+              Tab(text: 'Full Screen Ads'),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 }

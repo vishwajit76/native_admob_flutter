@@ -1,17 +1,24 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
 import 'utils.dart';
 
+const int RATING_G = 0;
+const int RATING_PG = 1;
+const int RATING_T = 2;
+const int RATING_MA = 3;
+
 /// The basic class to use Ads. It's responsible to initialize
-/// the SDK, make sure you are:
-///   - using the right Ad Unit Id;
+/// the SDK and make sure you are:
 ///   - using the right system version;
-///   - using test devices;
-///   - targeting the right people groups.
+///   - using test devices and test ids;
+///   - targeting the right groups of people.
 class MobileAds {
+  MobileAds._();
+
   // Unit ids
   static String nativeAdUnitId;
   static String get nativeAdTestUnitId => Platform.isAndroid
@@ -75,7 +82,10 @@ class MobileAds {
 
   static int _version = 0;
 
-  /// Get the current version of the os
+  /// Get the current version of the os. It's used to define what
+  /// platform view is going to be used.
+  ///
+  /// For more info, read the [documentation](https://github.com/bdlukaa/native_admob_flutter/wiki/Initialize#enabling-hybrid-composition-for-android)
   static int get osVersion => _version;
 
   /// Before creating any native ads, you must initalize the admob.
@@ -89,7 +99,7 @@ class MobileAds {
   /// }
   /// ```
   ///
-  /// This method must be called in the main thread\
+  /// This method must be called in the main thread/isolate\
   /// You can find a complete example [here](https://github.com/bdlukaa/native_admob_flutter/blob/master/example/lib/main.dart)\
   /// For more info on intialization, read the [documentation](https://github.com/bdlukaa/native_admob_flutter/wiki/Initialize#initialize-the-mobile-ads-sdk)
   static Future<void> initialize({
@@ -111,25 +121,30 @@ class MobileAds {
 
     // Ad Ids
     MobileAds.nativeAdUnitId ??= nativeAdUnitId ?? nativeAdTestUnitId;
-    debugCheckIsTestId(MobileAds.nativeAdUnitId, [
+    _debugCheckIsTestId(MobileAds.nativeAdUnitId, [
       nativeAdTestUnitId,
       nativeAdVideoTestUnitId,
     ]);
+
     MobileAds.bannerAdUnitId ??= bannerAdUnitId ?? bannerAdTestUnitId;
-    debugCheckIsTestId(MobileAds.bannerAdUnitId, [bannerAdTestUnitId]);
+    _debugCheckIsTestId(MobileAds.bannerAdUnitId, [bannerAdTestUnitId]);
+
     MobileAds.interstitialAdUnitId ??=
         interstitialAdUnitId ?? interstitialAdTestUnitId;
-    debugCheckIsTestId(MobileAds.interstitialAdUnitId, [
+    _debugCheckIsTestId(MobileAds.interstitialAdUnitId, [
       interstitialAdTestUnitId,
       interstitialAdVideoTestUnitId,
     ]);
+
     MobileAds.rewardedAdUnitId ??= rewardedAdUnitId ?? rewardedAdTestUnitId;
-    debugCheckIsTestId(MobileAds.rewardedAdUnitId, [rewardedAdTestUnitId]);
+    _debugCheckIsTestId(MobileAds.rewardedAdUnitId, [rewardedAdTestUnitId]);
+
     MobileAds.appOpenAdUnitId ??= appOpenAdUnitId ?? appOpenAdTestUnitId;
-    debugCheckIsTestId(MobileAds.appOpenAdUnitId, [appOpenAdTestUnitId]);
+    _debugCheckIsTestId(MobileAds.appOpenAdUnitId, [appOpenAdTestUnitId]);
 
     // Make sure the version is supported
     _version = await _pluginChannel.invokeMethod<int>('initialize');
+    assertVersionIsSupported(false);
     if (Platform.isAndroid) {
       // hybrid composition is enabled in android 19 and can't be disabled
       MobileAds.useHybridComposition =
@@ -142,17 +157,25 @@ class MobileAds {
         );
       }
     } else {
-      assertVersionIsSupported();
-      assert(
-        osVersion >= 9,
-        'The required version to use the AdMOB SDk is 9 or higher',
-      );
       if (!(useHybridComposition ?? true))
         print(
           'Virtual display is not avaiable on iOS. Using hybrid composition',
         );
     }
     _initialized = true;
+  }
+
+  /// Check if the test id that is being used is for testing or not.
+  ///
+  /// [kReleaseMode] and [kDebugMode] are considered as test mode
+  static void _debugCheckIsTestId(String id, List<String> testIds) {
+    assert(id != null);
+    assert(testIds != null);
+    if (!testIds.contains(id) && !kReleaseMode)
+      print(
+        'It is highly recommended to use test ads in for testing instead of production ads'
+        'Failure to do so can lead in to the suspension of your account',
+      );
   }
 
   /// Sets a list of test device IDs corresponding to test devices which will
@@ -238,11 +261,16 @@ class MobileAds {
   /// | 3          | MA                    | 16+, 18+              | 17+             |
   ///
   /// [Learn more](https://support.google.com/admob/answer/7562142)
+  ///
+  /// Basic usage:
+  /// ```dart
+  /// MobileAds.setMaxAdContentRating(RATING_MA);
+  /// ```
   static Future<void> setMaxAdContentRating(int maxRating) async {
     assert(maxRating != null, 'Max rating must not be null');
     assert(
-      [0, 1, 2, 3].contains(maxRating),
-      'The provided int is not avaiable. Avaiable values: 0, 1, 2, 3',
+      [RATING_G, RATING_PG, RATING_T, RATING_MA].contains(maxRating),
+      'The provided int is not avaiable. Avaiable values: $RATING_G, $RATING_PG, $RATING_T, $RATING_MA',
     );
     await _pluginChannel.invokeMethod('setMaxAdContentRating', {
       'maxRating': maxRating ?? 0,
@@ -256,7 +284,7 @@ class MobileAds {
   /// The device volume, controlled through volume buttons or OS-level volume slider, determines
   /// the volume for device audio output. However, apps can independently adjust volume levels
   /// relative to the device volume to tailor the audio experience. You can report the relative
-  /// app volume to the Mobile Ads SDK through the static setAppVolume() method. Valid ad volume
+  /// app volume to the Mobile Ads SDK through the static `setAppVolume()` method. Valid ad volume
   /// values range from 0.0 (silent) to 1.0 (current device volume). Here's an example of how to
   /// report the relative app volume to the SDK:
   ///
@@ -268,7 +296,9 @@ class MobileAds {
   static Future<void> setAppVolume(double volume) {
     assert(volume != null, 'The volume can NOT be null');
     assert(
-        volume >= 0 && volume <= 1, 'The volume must be in bettwen of 0 and 1');
+      volume >= 0 && volume <= 1,
+      'The volume must be in bettwen of 0 and 1',
+    );
     return _pluginChannel.invokeMethod('setAppVolume', {'volume': volume ?? 1});
   }
 
@@ -276,10 +306,10 @@ class MobileAds {
   ///
   /// Unmuting the app volume reverts it to the previously set level. By default, the app
   /// volume for the Google Mobile Ads SDK is set to 1 (the current device volume).
-  static Future<void> setAppMuted(bool muted) {
-    assert(muted != null, 'The value can NOT be null');
-    return _pluginChannel
-        .invokeMethod('setAppMuted', {'muted', muted ?? false});
+  static Future<void> setAppMuted([bool muted = true]) {
+    return _pluginChannel.invokeMethod('setAppMuted', {
+      'muted': muted ?? true,
+    });
   }
 
   static const _pluginChannel = const MethodChannel('native_admob_flutter');

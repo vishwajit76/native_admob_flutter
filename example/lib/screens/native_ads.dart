@@ -26,28 +26,35 @@ class _NativeAdsState extends State<NativeAds>
         padding: EdgeInsets.all(10),
         children: [
           NativeAd(
-            height: 70,
+            height: 60,
+            builder: (context, child) {
+              return Material(
+                elevation: 8,
+                child: child,
+              );
+            },
             buildLayout: adBannerLayoutBuilder,
             loading: Text('loading'),
             error: Text('error'),
-            headline: AdTextView(
-              style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.bold,
-                  color: Colors.black),
-              maxLines: 1,
-            ),
+            icon: AdImageView(padding: EdgeInsets.only(left: 6)),
+            headline: AdTextView(style: TextStyle(color: Colors.black)),
             advertiser: AdTextView(style: TextStyle(color: Colors.black)),
             body: AdTextView(style: TextStyle(color: Colors.black)),
             media: AdMediaView(height: 70, width: 120),
             button: AdButtonView(
-              margin: EdgeInsets.only(left: 6, right: 6, bottom: 6),
+              margin: EdgeInsets.only(left: 6, right: 6),
               textStyle: TextStyle(color: Colors.green, fontSize: 14),
             ),
           ),
           SizedBox(height: 10),
           NativeAd(
             height: 100,
+            builder: (context, child) {
+              return Material(
+                elevation: 8,
+                child: child,
+              );
+            },
             buildLayout: secondBuilder,
             loading: Text('loading'),
             error: Text('error'),
@@ -65,6 +72,12 @@ class _NativeAdsState extends State<NativeAds>
           SizedBox(height: 10),
           NativeAd(
             height: 300,
+            builder: (context, child) {
+              return Material(
+                elevation: 8,
+                child: child,
+              );
+            },
             buildLayout: fullBuilder,
             loading: Text('loading'),
             error: Text('error'),
@@ -131,6 +144,7 @@ AdLayoutBuilder get fullBuilder => (ratingBar, media, icon, headline,
                 ),
               ], margin: EdgeInsets.only(left: 4)),
             ],
+            gravity: LayoutGravity.center_horizontal,
             width: WRAP_CONTENT,
             orientation: HORIZONTAL,
             margin: EdgeInsets.only(top: 6),

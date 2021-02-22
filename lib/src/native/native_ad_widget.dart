@@ -53,17 +53,18 @@ class NativeAd extends StatefulWidget {
   /// The ad button. This isn't always inclued in the request
   final AdButtonView button;
 
-  /// The ad controller. If not specified, uses a default controller
+  /// The ad controller. If not specified, uses a default controller.
+  /// This can not be changed dynamically
   ///
   /// For more info, read the [documentation](https://github.com/bdlukaa/native_admob_flutter/wiki/Using-the-controller-and-listening-to-native-events)
   final NativeAdController controller;
 
-  /// The widget used in case an error shows up
+  /// The widget used in case of an error shows up
   ///
   /// For more info, read the [documentation](https://github.com/bdlukaa/native_admob_flutter/wiki/Native-Ad-builder-and-placeholders#loading-and-error-placeholders)
   final Widget error;
 
-  /// The widget used when the ad is loading.
+  /// The widget used while the ad is loading.
   ///
   /// For more info, read the [documentation](https://github.com/bdlukaa/native_admob_flutter/wiki/Native-Ad-builder-and-placeholders#loading-and-error-placeholders)
   final Widget loading;
@@ -96,16 +97,37 @@ class NativeAd extends StatefulWidget {
   /// `reloadWhenOptionsChange` to false
   final NativeAdOptions options;
 
-  /// If true, the ad will be reloaded whenever `options` change
+  /// If true, the ad will be reloaded whenever `options` changes
   final bool reloadWhenOptionsChange;
 
-  /// Build the ad
+  /// Build the ad background. Basic usage:
+  /// ```dart
+  /// NativeAd(
+  ///   builder: (context, child) {
+  ///     return Container(
+  ///       // Applies a blue color to the background.
+  ///       // You can use anything here to build the ad.
+  ///       // The ad won't be reloaded
+  ///       color: Colors.blue,
+  ///       child: child,
+  ///     );
+  ///   }
+  /// )
+  /// ```
+  ///
+  /// For more info, read the [changelog](https://github.com/bdlukaa/native_admob_flutter/wiki/Native-Ad-builder-and-placeholders#adbuilder)
   final AdBuilder builder;
 
-  /// Create a NativeAd
+  /// Create a `NativeAd`.
+  /// Uses `NativeAdView` on android and `GADNativeAd` on iOS
   ///
-  /// For more info, read the [documentation](https://github.com/bdlukaa/native_admob_flutter/wiki/Creating-a-native-ad#creating-a-layout-builder)
-  NativeAd({
+  /// Useful links:
+  ///   - https://developers.google.com/admob/ios/native/start
+  ///   - https://developers.google.com/admob/android/native/start
+  ///   - https://github.com/bdlukaa/native_admob_flutter/wiki/Creating-a-native-ad
+  ///
+  /// For more info, read the [documentation](https://github.com/bdlukaa/native_admob_flutter/wiki/Creating-a-native-ad)
+  const NativeAd({
     Key key,
     @required this.buildLayout,
     this.advertiser,
@@ -148,8 +170,12 @@ class _NativeAdState extends State<NativeAd>
             widget.options?.toJson()?.toString())
       controller.load(options: widget.options);
     if (layout(oldWidget).toString() != layout(widget).toString()) {
-      controller.requestAdUIUpdate(layout(widget));
+      _requestAdUIUpdate(layout(widget));
     }
+  }
+
+  void _requestAdUIUpdate(Map<String, dynamic> layout) {
+    controller.channel.invokeMethod('updateUI', {'layout': layout ?? {}});
   }
 
   @override
@@ -177,7 +203,12 @@ class _NativeAdState extends State<NativeAd>
 
   @override
   void dispose() {
-    controller?.dispose();
+    // dispose the controller only if the controller was
+    // created by the ad.
+    if (widget.controller == null)
+      controller?.dispose();
+    else
+      controller?.attach(false);
     super.dispose();
   }
 
@@ -203,10 +234,9 @@ class _NativeAdState extends State<NativeAd>
       // assert(!width.isInfinite, 'A width must be provided');
       assert(
         height > 32 && width > 32,
-        '''
-        Native ad views that have a width or height smaller than 32 will be demonetized in the future. 
-        Please make sure the ad view has sufficiently large area.
-        ''',
+        'Native ad views that have a width or height smaller than '
+        '32 will be demonetized in the future. '
+        'Please make sure the ad view has sufficiently large area.',
       );
 
       if (Platform.isAndroid) {
@@ -236,44 +266,38 @@ class _NativeAdState extends State<NativeAd>
 
   Map<String, dynamic> layout(NativeAd widget) {
     // default the layout views
-    final headline = widget.headline ??
-        AdTextView(
-          style: TextStyle(
-              fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
-          maxLines: 1,
-        );
-    final advertiser = widget.advertiser ?? AdTextView();
-    final attribution = widget.attribution ??
-        AdTextView(
-          width: WRAP_CONTENT,
-          height: WRAP_CONTENT,
-          padding: EdgeInsets.symmetric(horizontal: 2, vertical: 0),
-          style: TextStyle(color: Colors.black),
-          text: 'Ad',
-          margin: EdgeInsets.only(right: 2),
-          maxLines: 1,
-          decoration: AdDecoration(
-            borderRadius: AdBorderRadius.all(10),
-            backgroundColor: Colors.yellow,
-          ),
-        );
-    final body = widget.body ?? AdTextView();
-    final button = widget.button ??
-        AdButtonView(
-          pressColor: Colors.red,
-          decoration: AdDecoration(
-            backgroundColor: Colors.yellow,
-          ),
-          margin: EdgeInsets.only(top: 6),
-        );
-    final icon = widget.icon ??
-        AdImageView(
-          margin: EdgeInsets.only(left: 4),
-        );
-    final media = widget.media ?? AdMediaView();
-    final price = widget.price ?? AdTextView();
-    final ratingBar = widget.ratingBar ?? AdRatingBarView();
-    final store = widget.store ?? AdTextView();
+    final headline = AdTextView(
+      style: TextStyle(
+        fontSize: 16,
+        fontWeight: FontWeight.bold,
+      ),
+      maxLines: 1,
+    ).copyWith(widget.headline);
+    final advertiser = AdTextView().copyWith(widget.advertiser);
+    final attribution = AdTextView(
+      width: WRAP_CONTENT,
+      height: WRAP_CONTENT,
+      padding: EdgeInsets.symmetric(horizontal: 2, vertical: 0),
+      style: TextStyle(color: Colors.black),
+      text: 'Ad',
+      margin: EdgeInsets.only(right: 2),
+      maxLines: 1,
+      decoration: AdDecoration(
+        borderRadius: AdBorderRadius.all(10),
+        backgroundColor: Colors.yellow,
+      ),
+    ).copyWith(widget.attribution);
+    final body = AdTextView().copyWith(widget.body);
+    final button = AdButtonView(
+      pressColor: Colors.red,
+      decoration: AdDecoration(backgroundColor: Colors.yellow),
+      margin: EdgeInsets.only(top: 6),
+    ).copyWith(widget.button);
+    final icon = AdImageView().copyWith(widget.icon);
+    final media = AdMediaView().copyWith(widget.media);
+    final price = AdTextView().copyWith(widget.price);
+    final ratingBar = AdRatingBarView().copyWith(widget.ratingBar);
+    final store = AdTextView().copyWith(widget.store);
 
     // define the layout ids
     advertiser.id = 'advertiser';
@@ -288,20 +312,18 @@ class _NativeAdState extends State<NativeAd>
     store.id = 'store';
 
     // build the layout
-    final layout = (widget.buildLayout ?? adBannerLayoutBuilder)
-        .call(
-          ratingBar,
-          media,
-          icon,
-          headline,
-          advertiser,
-          body,
-          price,
-          store,
-          attribution,
-          button,
-        )
-        ?.toJson();
+    final layout = (widget.buildLayout ?? adBannerLayoutBuilder)(
+      ratingBar,
+      media,
+      icon,
+      headline,
+      advertiser,
+      body,
+      price,
+      store,
+      attribution,
+      button,
+    )?.toJson();
     assert(layout != null, 'The layout must not return null');
 
     return layout;

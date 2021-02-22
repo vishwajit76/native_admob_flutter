@@ -16,6 +16,10 @@ const _viewType = 'banner_admob';
 ///   - https://developers.google.com/admob/android/banner on Android
 ///   - https://developers.google.com/admob/ios/banner on iOS
 class BannerAd extends StatefulWidget {
+  /// Creates a new Banner Ad.
+  /// `size` can NOT be null. If so, an `AssertionError` is thrown
+  ///
+  /// For more info, read the [documentation](https://github.com/bdlukaa/native_admob_flutter/wiki/Creating-a-banner-ad)
   const BannerAd({
     Key key,
     this.builder,
@@ -23,7 +27,10 @@ class BannerAd extends StatefulWidget {
     this.size = BannerSize.ADAPTIVE,
     this.error,
     this.loading,
-  })  : assert(size != null),
+    this.unitId,
+    this.options = const BannerAdOptions(),
+  })  : assert(size != null, 'A size must be set'),
+        assert(options != null),
         super(key: key);
 
   /// The builder of the ad. The ad won't be reloaded if this changes
@@ -98,7 +105,8 @@ class BannerAd extends StatefulWidget {
   /// For more info, visit the [documentation](https://github.com/bdlukaa/native_admob_flutter/wiki/Using-the-controller-and-listening-to-banner-events)
   final BannerAdController controller;
 
-  /// The size of the Ad. `BannerSize.ADAPTIVE` is the default
+  /// The size of the Ad. `BannerSize.ADAPTIVE` is the default.
+  /// This can NOT be null. If so, throws an `AssertionError`
   ///
   /// ## Sizes
   ///
@@ -136,6 +144,13 @@ class BannerAd extends StatefulWidget {
   /// For more info, visit the [documentation](https://github.com/bdlukaa/native_admob_flutter/wiki/Creating-a-banner-ad#creating-an-ad)
   final BannerSize size;
 
+  /// The unitId used by this `BannerAd`.
+  /// If changed after loaded it'll be reloaded with the new ad unit id.\
+  /// If null, defaults to `MobileAds.bannerAdUnitId`
+  final String unitId;
+
+  final BannerAdOptions options;
+
   @override
   _BannerAdState createState() => _BannerAdState();
 }
@@ -147,6 +162,8 @@ class _BannerAdState extends State<BannerAd>
 
   double height;
 
+  BannerAdOptions get options => widget.options;
+
   @override
   void initState() {
     super.initState();
@@ -157,16 +174,20 @@ class _BannerAdState extends State<BannerAd>
   // @override
   // void didUpdateWidget(BannerAd oldWidget) {
   //   super.didUpdateWidget(oldWidget);
-  //   if (oldWidget.controller == null && widget.controller != null) {
-  //     attachNewController();
-  //     controller.changeController(controller.id);
-  //     controller.load();
-  //   }
+  //   // if ((oldWidget.unitId == null && widget.unitId != null) ||
+  //   //     (oldWidget.unitId != widget.unitId)) {
+  //   //   controller.load();
+  //   // }
+  //   // if (oldWidget.controller == null && widget.controller != null) {
+  //   //   attachNewController();
+  //   //   controller.changeController(controller.id);
+  //   //   controller.load();
+  //   // }
   // }
 
   void attachNewController() {
     controller = widget.controller ?? BannerAdController();
-    controller.attach();
+    controller.attach(true);
     controller.onEvent.listen((e) {
       final event = e.keys.first;
       final info = e.values.first;
@@ -174,11 +195,8 @@ class _BannerAdState extends State<BannerAd>
         case BannerAdEvent.loading:
         case BannerAdEvent.loadFailed:
         case BannerAdEvent.loaded:
-          height = (info as int)?.toDouble();
+          if (info is int) height = info.toDouble();
           setState(() => state = event);
-          break;
-        case BannerAdEvent.undefined:
-          setState(() {});
           break;
         default:
           break;
@@ -188,7 +206,12 @@ class _BannerAdState extends State<BannerAd>
 
   @override
   void dispose() {
-    controller?.dispose();
+    // dispose the controller only if the controller was
+    // created by the ad.
+    if (widget.controller == null)
+      controller?.dispose();
+    else
+      controller?.attach(false);
     super.dispose();
   }
 
@@ -197,6 +220,7 @@ class _BannerAdState extends State<BannerAd>
     super.build(context);
     assertPlatformIsSupported();
     assertVersionIsSupported();
+    assert(options != null, 'You must set the ad options');
 
     return LayoutBuilder(
       builder: (context, consts) {
@@ -210,7 +234,7 @@ class _BannerAdState extends State<BannerAd>
         final params = <String, dynamic>{};
         params.addAll({
           'controllerId': controller.id,
-          'unitId': MobileAds.bannerAdUnitId,
+          'unitId': widget.unitId ?? MobileAds.bannerAdUnitId,
           'size_height': height ?? -1,
           'size_width': width,
         });

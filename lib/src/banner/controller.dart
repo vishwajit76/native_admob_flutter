@@ -20,9 +20,6 @@ enum BannerAdEvent {
   /// Called when an impression is recorded for an ad.
   impression,
 
-  /// Called when a click is recorded for an ad.
-  clicked,
-
   /// Called when an ad request failed.
   loadFailed,
 
@@ -31,9 +28,6 @@ enum BannerAdEvent {
 
   /// Called when the ad starts loading
   loading,
-
-  /// Called when the event is unkown (usually for rebuilding ui)
-  undefined,
 }
 
 /// The size of a [BannerAd]. It's highly recommended to use
@@ -125,7 +119,8 @@ class BannerSize {
 /// For more info, see:
 ///   - https://developers.google.com/admob/android/banner
 ///   - https://developers.google.com/admob/ios/banner
-class BannerAdController extends LoadShowAd<BannerAdEvent> {
+class BannerAdController extends LoadShowAd<BannerAdEvent>
+    with AttachableMixin {
   /// The test id for this ad.
   ///   - Android: ca-app-pub-3940256099942544/6300978111
   ///   - iOS: ca-app-pub-3940256099942544/2934735716
@@ -165,10 +160,10 @@ class BannerAdController extends LoadShowAd<BannerAdEvent> {
   /// For more info, [read the documentation](https://github.com/bdlukaa/native_admob_flutter/wiki/Using-the-controller-and-listening-to-banner-events#listening-to-events)
   Stream<Map<BannerAdEvent, dynamic>> get onEvent => super.onEvent;
 
-  bool _attached = false;
+  bool _loaded = false;
 
-  /// Check if the controller is attached to a `BannerAd`
-  bool get isAttached => _attached;
+  /// Returns true if the ad was successfully loaded and is ready to be rendered.
+  bool get isLoaded => _loaded;
 
   /// Creates a new native ad controller
   BannerAdController() : super();
@@ -177,16 +172,6 @@ class BannerAdController extends LoadShowAd<BannerAdEvent> {
   void init() {
     channel.setMethodCallHandler(_handleMessages);
     MobileAds.pluginChannel.invokeMethod('initBannerAdController', {'id': id});
-  }
-
-  /// Attach the controller to a new `BannerAd`. Throws an `AssertionException` if the controller
-  /// is already attached.
-  ///
-  /// You should NOT call this function
-  void attach() {
-    ensureAdNotDisposed();
-    assertControllerIsNotAttached(isAttached);
-    _attached = true;
   }
 
   /// Dispose the controller to free up resources.
@@ -202,35 +187,33 @@ class BannerAdController extends LoadShowAd<BannerAdEvent> {
   /// ```
   void dispose() {
     super.dispose();
-    MobileAds.pluginChannel.invokeMethod(
-      'disposeBannerAdController',
-      {'id': id},
-    );
+    MobileAds.pluginChannel.invokeMethod('disposeBannerAdController', {
+      'id': id,
+    });
+    attach(false);
   }
 
   Future<dynamic> _handleMessages(MethodCall call) async {
     if (isDisposed) return;
     switch (call.method) {
       case 'loading':
+        _loaded = false;
         onEventController.add({BannerAdEvent.loading: null});
         break;
       case 'onAdFailedToLoad':
+        _loaded = false;
         onEventController.add({
           BannerAdEvent.loadFailed: AdError.fromJson(call.arguments),
         });
         break;
       case 'onAdLoaded':
+        _loaded = true;
         onEventController.add({BannerAdEvent.loaded: call.arguments});
-        break;
-      case 'onAdClicked':
-        onEventController.add({BannerAdEvent.clicked: null});
         break;
       case 'onAdImpression':
         onEventController.add({BannerAdEvent.impression: null});
         break;
-      case 'undefined':
       default:
-        onEventController.add({BannerAdEvent.undefined: null});
         break;
     }
   }
@@ -238,16 +221,14 @@ class BannerAdController extends LoadShowAd<BannerAdEvent> {
   /// Load the ad. The ad needs to be loaded to be rendered.
   ///
   /// For more info, read the [documentation](https://github.com/bdlukaa/native_admob_flutter/wiki/Using-the-controller-and-listening-to-banner-events#reloading-the-ad)
-  Future<bool> load() {
+  Future<bool> load({
+    /// Force to load an ad even if another is already avaiable
+    bool force = false,
+  }) async {
     ensureAdNotDisposed();
-    assertControllerIsAttached(isAttached);
     assertMobileAdsIsInitialized();
-    return channel.invokeMethod<bool>('loadAd', null);
+    if (!debugCheckAdWillReload(isLoaded, force)) return false;
+    _loaded = await channel.invokeMethod<bool>('loadAd');
+    return isLoaded;
   }
-
-  // @protected
-  // void changeController(String id) {
-  //   channel.invokeMethod('changeController', {'id': id});
-  // }
-
 }

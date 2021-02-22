@@ -1,5 +1,93 @@
 Date format: DD/MM/YYYY
 
+## [0.9.1+1] - [18/02/2021]
+
+- Remove the iOS support label from pub.dev (Fixes [#9](https://github.com/bdlukaa/native_admob_flutter/issues/9#issuecomment-781496080))
+
+## [0.9.1] - [15/02/2021]
+
+- Added a splashscreen to the example app (Fixes [#7](https://github.com/bdlukaa/native_admob_flutter/issues/7))
+- [Wiki](https://github.com/bdlukaa/native_admob_flutter/wiki/):
+  - [Consider adding a splashscreen](https://github.com/bdlukaa/native_admob_flutter/wiki/Platform-setup#consider-adding-a-splash-screen)
+
+## [0.9.0] - [14/02/2021]
+
+- **BREAKING**:
+  - Removed `InterstitialAdEvent` and `AppOpenAdEvent`
+  - Removed `AdError.domain`
+- **NEW**: `FullScreenAdEvent`
+- Improved documentation
+- [Wiki](https://github.com/bdlukaa/native_admob_flutter/wiki)
+  - Updated wiki about `RewardedAd` latest update
+  - **NEW**: [Consider using Native Ads over Banner Ads](https://github.com/bdlukaa/native_admob_flutter/wiki/Creating-a-banner-ad#consider-using-native-ads-over-banner-ads)
+- **FIXED**:
+  - AdError could not parse json from platform side. Now `loadFailed` and`showFailed` works correctly and the `error` placeholder is shown properly
+
+## [0.8.2] - [14/02/2021]
+
+- **BREAKING**:
+  - Removed `AdError.cause`. It was giving a StackOverflowError on the android side. (Fixed [#6](https://github.com/bdlukaa/native_admob_flutter/issues/6))
+
+## [0.8.1] - [13/02/2021]
+
+- Make sure the controller is not attached only when trying to attach. (Fixed [#5](https://github.com/bdlukaa/native_admob_flutter/issues/5))
+- Formatted files and improved documentation
+- [Example app](example/):
+  - Added Material elevation to native ads
+  - Added an example using Navigator
+
+## [0.8.0] - [11/02/2021]
+
+- **NEW**:
+  - `AdView.copyWith`. Now native ads have default values that will only be overritten if done manually. (Fixes [#4](https://github.com/bdlukaa/native_admob_flutter/issues/4))
+  - `BannerAdOptions`
+  - `force` on load methods
+  - `isLoaded` on banner and native controller
+- **HIGHLIGHT**: Automatically detect the orientation of the device when loading and set App Open Ad orientation accordingly. Previosly, if your app was in landscape mode and the orientation was set to portrait, the app would go to the portrait orientation
+- Example app:
+  - Force reload ads if they're long pressed
+  - Added a `RefreshIndicator` to the full screen ads page
+- Improved documentation and formatted files
+
+## [0.7.2] - [10/02/2021]
+
+- Improved documentation and formatted files
+- Make sure to check if the native ad is not disposed instead of attached
+- [profile mode](https://flutter.dev/docs/testing/build-modes#profile) is now considered as test mode
+- Avoid `RewardedAd`s from receiving events if disposed
+- Ensure the SDK is initialized before using it (`MobileAds.initialize`)
+- New `AttachableMixin`
+- Disattach the controller on dispose
+- `MobileAds`
+  - Make constructor private
+  - Add android version checking on initialize (min version is 16)
+  - Fixed `setAppMuted` error
+  - Added `RATING_G`, `RATING_PG`, `RATING_T` and `RATING_MA` consts to support `setMaxAdContentRating`
+  - Param on `setAppMuted` is now optional. `true` by default
+- Added internet permission to example app
+
+## [0.7.1] - [08/02/2021]
+
+- [Banner Ads](https://github.com/bdlukaa/native_admob_flutter/wiki/Creating-a-banner-ad):
+  - **NEW**: You can now set the unitId in the `BannerAd` constructor using `unitId`
+  - **BREAKING**: Removed `undefined` from `BannerAdEvent`
+- [Native Ads](https://github.com/bdlukaa/native_admob_flutter/wiki/Creating-a-native-ad)
+  - Migrate deprecated depedencies. [migration](https://developers.google.com/admob/android/migration)
+  - **NEW**: Added `unmuted` in `NativeAdEvent`
+  - **BREAKING in NativeAdEvent**:
+    - Removed `clicked` and `impression`
+    - Renamed `mute` to `muted`
+  - Make sure to use a valid reason on [Custom Mute This Ad](https://github.com/bdlukaa/native_admob_flutter/wiki/Custom-mute-this-ad)
+- Only dispose controller if it was created by the ad
+- Disattach the controller when the banner ad is disposed
+- [Wiki (Documentation)](https://github.com/bdlukaa/native_admob_flutter/wiki):
+  - Make sure to follow the new Interstitial and Rewarded Ads apis
+  - Fixed broken links
+  - Removed Native Video Ad
+  - **NEW**: Ad Errors
+- Updated documentation and formatted all the files
+- Simplified example
+
 ## 0.7.0 - [06/02/2021]
 
 - Migrated to SDK v20 on Android
