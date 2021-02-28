@@ -58,9 +58,9 @@ class NativeAdView : NSObject,FlutterPlatformView {
             switch (viewType) {
             case "linear_layout" :
                 view=UIStackView()
-                (view as! UIStackView).translatesAutoresizingMaskIntoConstraints=false
+//                (view as! UIStackView).translatesAutoresizingMaskIntoConstraints=false
                 (view as! UIStackView).distribution = .fillProportionally
-
+                
                 if data["orientation"] as! String == "vertical"{
                     (view as! UIStackView).axis = NSLayoutConstraint.Axis.vertical
                 } else {
@@ -181,7 +181,10 @@ class NativeAdView : NSObject,FlutterPlatformView {
             let dpWidth = Int(width as! Float).dp()
             view.frame.size.width=CGFloat(dpWidth)
             view.frame.size.height=CGFloat(dpHeight)
+            view.sizeThatFits(CGSize(width: CGFloat(dpWidth), height: CGFloat(dpHeight)))
         }
+
+        
         
         switch data["id"] as! String{
         case "advertiser" : adAdvertiser = view as? UILabel

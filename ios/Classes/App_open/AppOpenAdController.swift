@@ -7,6 +7,8 @@
 
      let id: String
      let channel: FlutterMethodChannel
+    var result : FlutterResult?=nil
+
 
      init(id: String, channel: FlutterMethodChannel) {
          self.id = id
@@ -17,6 +19,7 @@
      }
 
     private func handle(_ call: FlutterMethodCall, result: @escaping FlutterResult) {
+        self.result=result
         let params = call.arguments as? [String: Any]
         
         switch call.method {
@@ -48,6 +51,7 @@
     
     func ad(_ ad: GADFullScreenPresentingAd, didFailToPresentFullScreenContentWithError error: Error) {
         self.channel.invokeMethod("onAdFailedToShowFullScreenContent", arguments: error.localizedDescription)
+        result!(false)
     }
     
     func adDidPresentFullScreenContent(_ ad: GADFullScreenPresentingAd) {
@@ -56,6 +60,7 @@
     
     func adDidDismissFullScreenContent(_ ad: GADFullScreenPresentingAd) {
         self.channel.invokeMethod("onAdDismissedFullScreenContent", arguments: nil)
+        result!(true)
     }
     
 
