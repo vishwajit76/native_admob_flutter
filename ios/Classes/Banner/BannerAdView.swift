@@ -29,6 +29,7 @@ class BannerAdView : NSObject,FlutterPlatformView {
     
     private func generateAdView(data:Dictionary<String, Any>?) {
         controller.bannerView = GADBannerView(adSize: kGADAdSizeBanner)
+        controller.bannerView.rootViewController=UIApplication.shared.keyWindow?.rootViewController
         controller.bannerView.adUnitID = (data?["unitId"] as! String)
         }
 
@@ -50,15 +51,11 @@ extension BannerAdView : GADBannerViewDelegate {
         ])
     }
     
-    /// Tells the delegate that a full screen view will be presented in response to the user clicking on
-    /// an ad. The delegate may want to pause animations and time sensitive interactions.
     private func adViewWillPresentScreen(_ bannerView: GADBannerView) {
         channel.invokeMethod("onAdClicked", arguments: nil)
     }
     
-    // TODO: not sure this exists on iOS.
-    // channel.invokeMethod("impression", null)
-    
+
     func adViewWillLeaveApplication(_ bannerView: GADBannerView) {
         channel.invokeMethod("leftApplication", arguments: nil)
     }
