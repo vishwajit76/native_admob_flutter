@@ -30,7 +30,10 @@ class RewardedAdController: NSObject,GADFullScreenContentDelegate {
             GADRewardedAd.load(withAdUnitID: unitId, request: GADRequest()) { (ad : GADRewardedAd?, error:Error?) in
                 if error != nil {
                     self.rewardedAd = nil
-                    self.channel.invokeMethod("onAdFailedToLoad", arguments: error.debugDescription)
+                    self.channel.invokeMethod("onAdFailedToLoad", arguments: [
+                        "errorCode": (error! as NSError).code,
+                        "message": (error! as NSError).localizedDescription
+                    ])
                     result(false)
                 }
                 else{

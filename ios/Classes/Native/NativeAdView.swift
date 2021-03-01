@@ -28,8 +28,11 @@ class NativeAdView : NSObject,FlutterPlatformView {
         self.adView=GADNativeAdView()
         super.init()
         adView.backgroundColor = UIColor(white: 1, alpha: 0.5)
+        adView.translatesAutoresizingMaskIntoConstraints = false
         let builtView = buildView(data: data!)
-        builtView.frame=adView.bounds
+        print("\n builtview")
+        print(builtView)
+        print("\n")
         self.adView.addSubview(builtView)
         define()
         if let controllerId = data?["controllerId"] as? String,
@@ -60,7 +63,6 @@ class NativeAdView : NSObject,FlutterPlatformView {
                 view=UIStackView()
 //                (view as! UIStackView).translatesAutoresizingMaskIntoConstraints=false
                 (view as! UIStackView).distribution = .fillProportionally
-                
                 if data["orientation"] as! String == "vertical"{
                     (view as! UIStackView).axis = NSLayoutConstraint.Axis.vertical
                 } else {
@@ -96,6 +98,7 @@ class NativeAdView : NSObject,FlutterPlatformView {
                 view = UIImageView()
             case "media_view" :
                 view = GADMediaView()
+                print(view)
             case "rating_bar" :
                 view = UIImageView()
             case "button_view" :
@@ -113,9 +116,6 @@ class NativeAdView : NSObject,FlutterPlatformView {
         let gradient: Dictionary<String,Any>? = data["gradient"] as? Dictionary<String,Any>
         
         if(gradient != nil){
-            print("\n")
-            print(view.subviews)
-            print("\n")
             switch gradient?["orientation"] as! String{
             case "top_bottom" :
                 shape.startPoint = CGPoint(x: 0.5, y: 0.0);
@@ -176,9 +176,9 @@ class NativeAdView : NSObject,FlutterPlatformView {
         let paddingBottom=(data["paddingBottom"] as? Double)
         view.layoutMargins=UIEdgeInsets(top: CGFloat(paddingTop ?? 0), left: CGFloat(paddingLeft ?? 0), bottom: CGFloat(paddingBottom ?? 0), right: CGFloat(paddingRight ?? 0))
         
-        if let height =  data["height"], let width = data["width"] {
-            let dpHeight = Int(height as! Float).dp()
-            let dpWidth = Int(width as! Float).dp()
+        if let height =  data["height"] as! Float?, let width = data["width"] as! Float? ,width != -1, height != -1 {
+            let dpHeight = Int(height).dp()
+            let dpWidth = Int(width).dp()
             view.frame.size.width=CGFloat(dpWidth)
             view.frame.size.height=CGFloat(dpHeight)
             view.sizeThatFits(CGSize(width: CGFloat(dpWidth), height: CGFloat(dpHeight)))

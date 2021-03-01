@@ -30,7 +30,10 @@
             GADAppOpenAd.load(withAdUnitID: unitId, request: GADRequest(), orientation: UIInterfaceOrientation(rawValue: orientation)!) { (ad : GADAppOpenAd?, error:Error?) in
                 if error != nil {
                     self.appOpenAd = nil
-                    self.channel.invokeMethod("onAppOpenAdFailedToLoad", arguments: error.debugDescription)
+                    self.channel.invokeMethod("onAppOpenAdFailedToLoad", arguments: [
+                        "errorCode": (error! as NSError).code,
+                        "message": (error! as NSError).localizedDescription
+                    ])
                     result(false)
                 }
                 else{

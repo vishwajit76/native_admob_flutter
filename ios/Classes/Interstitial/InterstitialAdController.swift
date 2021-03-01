@@ -29,7 +29,10 @@ class InterstitialAdController: NSObject,GADFullScreenContentDelegate {
             GADInterstitialAd.load(withAdUnitID: unitId, request: GADRequest()) { (ad : GADInterstitialAd?, error:Error?) in
                 if error != nil {
                     self.interstitialAd = nil
-                    self.channel.invokeMethod("onAdFailedToLoad", arguments: error.debugDescription)
+                    self.channel.invokeMethod("onAdFailedToLoad", arguments: [
+                        "errorCode": (error! as NSError).code,
+                        "message": (error! as NSError).localizedDescription
+                    ])
                     result(false)
                 }
                 else{
