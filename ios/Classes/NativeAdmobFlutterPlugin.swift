@@ -3,8 +3,6 @@ import UIKit
 import GoogleMobileAds
 
 
-let controllerManager = InterstitialAdControllerManager.shared
-
 public class NativeAdmobFlutterPlugin: NSObject, FlutterPlugin {
     
     let messenger: FlutterBinaryMessenger

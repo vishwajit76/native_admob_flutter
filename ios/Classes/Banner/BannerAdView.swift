@@ -5,7 +5,6 @@ class BannerAdView : NSObject,FlutterPlatformView {
     
     var data:Dictionary<String, Any>?
     var controller: BannerAdController
-    private let channel: FlutterMethodChannel
     private let messenger: FlutterBinaryMessenger
     var result : FlutterResult?=nil
     private var adSize: GADAdSize = kGADAdSizeBanner
@@ -19,7 +18,6 @@ class BannerAdView : NSObject,FlutterPlatformView {
         self.controller = BannerAdControllerManager.shared.getController(forID: data?["controllerId"] as? String)!
         self.result=controller.result
         self.messenger = messenger
-        channel = FlutterMethodChannel(name: "banner_admob", binaryMessenger: messenger)
         super.init()
         if let width = data?["size_width"] as! Float?, width != -1{
             self.adSize=getAdSize(width: width)
@@ -55,12 +53,12 @@ class BannerAdView : NSObject,FlutterPlatformView {
 
 extension BannerAdView : GADBannerViewDelegate {
     func bannerViewDidReceiveAd(_ bannerView: GADBannerView) {
-        channel.invokeMethod("onAdLoaded", arguments: controller.bannerView.adSize.size.height)
+        controller.channel.invokeMethod("onAdLoaded", arguments: controller.bannerView.adSize.size.height)
         result?(true)
     }
     
     private func bannerView(bannerView: GADBannerView, didFailToReceiveAdWithError error: NSError) {
-        channel.invokeMethod("onAdFailedToLoad", arguments: [
+        controller.channel.invokeMethod("onAdFailedToLoad", arguments: [
             "errorCode": error.code,
             "message": error.localizedDescription
         ])
@@ -68,10 +66,10 @@ extension BannerAdView : GADBannerViewDelegate {
     }
     
     func bannerViewDidRecordImpression(_ bannerView: GADBannerView){
-        channel.invokeMethod("onAdImpression", arguments: nil)
+        controller.channel.invokeMethod("onAdImpression", arguments: nil)
     }
     
     func bannerViewWillPresentScreen(_ bannerView: GADBannerView) {
-        channel.invokeMethod("onAdClicked", arguments: nil)
+        controller.channel.invokeMethod("onAdClicked", arguments: nil)
     }
 }

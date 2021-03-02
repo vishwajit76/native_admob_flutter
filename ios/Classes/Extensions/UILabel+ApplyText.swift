@@ -8,6 +8,7 @@ extension UILabel{
         }
         
         if let textColor = data["textColor"] as? String{
+            print("\n")
             view.textColor = UIColor(hexString:textColor)
         }
         
@@ -24,7 +25,6 @@ extension UILabel{
         if let bold = data["bold"] as? Bool{
             if(bold){
                 view.font=UIFont.systemFont(ofSize: view.font.pointSize, weight: .bold)
-                
             }
             else{
                 view.font=UIFont.systemFont(ofSize: view.font.pointSize, weight: .regular)

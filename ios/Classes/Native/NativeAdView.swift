@@ -3,7 +3,7 @@ import GoogleMobileAds
 
 class NativeAdView : NSObject,FlutterPlatformView {
     
-    var data:Dictionary<String, Any>?
+    var data:[String:Any]?
     private let channel: FlutterMethodChannel
     
     private var adView: GADNativeAdView
@@ -22,18 +22,19 @@ class NativeAdView : NSObject,FlutterPlatformView {
     private var controller: NativeAdController? = nil
     
     
-    init(data: Dictionary<String, Any>?, messenger: FlutterBinaryMessenger) {
+    init(data: [String:Any]?, messenger: FlutterBinaryMessenger) {
         self.data=data
         channel = FlutterMethodChannel(name: "native_admob", binaryMessenger: messenger)
         self.adView=GADNativeAdView()
         super.init()
         adView.backgroundColor = UIColor(white: 1, alpha: 0.5)
-        adView.translatesAutoresizingMaskIntoConstraints = false
         let builtView = buildView(data: data!)
-        print("\n builtview")
-        print(builtView)
-        print("\n")
         self.adView.addSubview(builtView)
+        builtView.topAnchor.constraint(equalTo: adView.topAnchor).isActive = true
+        builtView.bottomAnchor.constraint(equalTo: adView.bottomAnchor).isActive = true
+        builtView.leftAnchor.constraint(equalTo: adView.leftAnchor).isActive = true
+        builtView.rightAnchor.constraint(equalTo: adView.rightAnchor).isActive = true
+        adView.layoutIfNeeded()
         define()
         if let controllerId = data?["controllerId"] as? String,
            let controller = NativeAdControllerManager.shared.getController(forID: controllerId) {
@@ -53,16 +54,16 @@ class NativeAdView : NSObject,FlutterPlatformView {
         
     }
     
-    private func buildView(data: Dictionary<String, Any>)-> UIView {
+    private func buildView(data: [String:Any])-> UIView {
         let viewType: String? = data["viewType"] as? String
         var view :UIView = UIView()
         
         if (viewType != nil){
             switch (viewType) {
             case "linear_layout" :
-                view=UIStackView()
-//                (view as! UIStackView).translatesAutoresizingMaskIntoConstraints=false
-                (view as! UIStackView).distribution = .fillProportionally
+                    view=UIGradientStackView(data: data)
+                (view as! UIStackView).distribution = .equalCentering
+                view.translatesAutoresizingMaskIntoConstraints=false
                 if data["orientation"] as! String == "vertical"{
                     (view as! UIStackView).axis = NSLayoutConstraint.Axis.vertical
                 } else {
@@ -92,17 +93,15 @@ class NativeAdView : NSObject,FlutterPlatformView {
                     }
                 }
             case "text_view" :
-                view = UILabel()
-                (view as! UILabel).applyText(data: data)
+                view=UIGradientLabel(data: data)
             case "image_view" :
                 view = UIImageView()
             case "media_view" :
                 view = GADMediaView()
-                print(view)
             case "rating_bar" :
                 view = UIImageView()
             case "button_view" :
-                view = UIButton()
+                    view=UIGradientButton(data: data)
             case .none:
                 print("none")
             case .some(_):
@@ -110,64 +109,6 @@ class NativeAdView : NSObject,FlutterPlatformView {
             }
             
         }
-
-        
-        let shape = CAGradientLayer()
-        let gradient: Dictionary<String,Any>? = data["gradient"] as? Dictionary<String,Any>
-        
-        if(gradient != nil){
-            switch gradient?["orientation"] as! String{
-            case "top_bottom" :
-                shape.startPoint = CGPoint(x: 0.5, y: 0.0);
-                shape.endPoint = CGPoint(x: 0.5, y: 1.0);
-            case "tr_bl" :
-                shape.startPoint = CGPoint(x: 1.0, y: 0.0);
-                shape.endPoint = CGPoint(x: 0.0, y: 1.0);
-            case "right_left" :
-                shape.startPoint = CGPoint(x: 1.0, y: 0.5);
-                shape.endPoint = CGPoint(x: 0.0, y: 0.5);
-            case "br_tl" :
-                shape.startPoint = CGPoint(x: 1.0, y: 1.0);
-                shape.endPoint = CGPoint(x: 0.0, y: 0.0);
-            case "bottom_top" :
-                shape.startPoint = CGPoint(x: 0.5, y: 1.0);
-                shape.endPoint = CGPoint(x: 0.5, y: 0.0);
-            case "bl_tr" :
-                shape.startPoint = CGPoint(x: 0.0, y: 1.0);
-                shape.endPoint = CGPoint(x: 1.0, y: 0.0);
-            case "left_right" :
-                shape.startPoint = CGPoint(x: 0.0, y: 0.5);
-                shape.endPoint = CGPoint(x: 1.0, y: 0.5);
-            case "tl_br" :
-                shape.startPoint = CGPoint(x: 0.0, y: 0.0);
-                shape.endPoint = CGPoint(x: 1.0, y: 1.0);
-            default:
-                shape.startPoint = CGPoint(x: 0.0, y: 0.5);
-                shape.endPoint = CGPoint(x: 1.0, y: 0.5);
-            }
-            
-            let colors: Array<CGColor> = (data["colors"] as? Array<String> ?? ["#ffffff","#ffffff"]).map { UIColor(hexString: $0).cgColor };
-            shape.colors=colors
-            
-            switch gradient?["type"] as! String{
-            case "linear" :
-                shape.type=CAGradientLayerType.axial
-            case "radial" :
-                shape.type=CAGradientLayerType.radial
-            default:
-                shape.type=CAGradientLayerType.axial
-            }
-        }
-     
-        // radius
-        shape.cornerRadius=CGFloat(data["topRightRadius"] as? Double ?? 00)
-        
-        shape.borderWidth=CGFloat(data["borderWidth"] as? Double ?? 0);
-        shape.borderColor=UIColor(hexString: data["borderColor"] as? String ?? "#ffffff").cgColor
-        
-        shape.backgroundColor=UIColor(hexString: (data["backgroundColor"] as? String ?? "#ffffff")).cgColor
-        
-        view.layer.insertSublayer(shape, at: 0)
         
         // bounds
         let paddingRight = (data["paddingRight"] as? Double)
@@ -176,15 +117,11 @@ class NativeAdView : NSObject,FlutterPlatformView {
         let paddingBottom=(data["paddingBottom"] as? Double)
         view.layoutMargins=UIEdgeInsets(top: CGFloat(paddingTop ?? 0), left: CGFloat(paddingLeft ?? 0), bottom: CGFloat(paddingBottom ?? 0), right: CGFloat(paddingRight ?? 0))
         
-        if let height =  data["height"] as! Float?, let width = data["width"] as! Float? ,width != -1, height != -1 {
-            let dpHeight = Int(height).dp()
-            let dpWidth = Int(width).dp()
-            view.frame.size.width=CGFloat(dpWidth)
-            view.frame.size.height=CGFloat(dpHeight)
-            view.sizeThatFits(CGSize(width: CGFloat(dpWidth), height: CGFloat(dpHeight)))
-        }
 
-        
+        if let height =  data["height"] as! Float?, let width = data["width"] as! Float? ,width != -1, height != -1, width != -2 {
+            view.heightAnchor.constraint(equalToConstant: CGFloat(height)).isActive = true
+            view.widthAnchor.constraint(equalToConstant: CGFloat(width)).isActive = true
+        }
         
         switch data["id"] as! String{
         case "advertiser" : adAdvertiser = view as? UILabel
@@ -200,7 +137,7 @@ class NativeAdView : NSObject,FlutterPlatformView {
         default:
             print("")
         }
-
+                
         return view
     }
     
