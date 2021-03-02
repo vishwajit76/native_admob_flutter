@@ -63,6 +63,10 @@ class UIGradientStackView: UIStackView {
             }
         }
         
+        if let backgroundColor = data["backgroundColor"] as? String{
+            gradientLayer.backgroundColor=UIColor(hexString: backgroundColor).cgColor
+        }
+        
         if let borderWidth = data["borderWidth"] as? Double{
             gradientLayer.borderWidth=CGFloat(borderWidth);
         }
@@ -185,6 +189,10 @@ class UIGradientButton: UIButton {
             }
         }
         
+        if let backgroundColor = data["backgroundColor"] as? String{
+            gradientLayer.backgroundColor=UIColor(hexString: backgroundColor).cgColor
+        }
+        
         if let borderWidth = data["borderWidth"] as? Double{
             gradientLayer.borderWidth=CGFloat(borderWidth);
         }
@@ -305,6 +313,10 @@ class UIGradientLabel: UILabel {
             default:
                 gradientLayer.type=CAGradientLayerType.axial
             }
+        }
+        
+        if let backgroundColor = data["backgroundColor"] as? String{
+            gradientLayer.backgroundColor=UIColor(hexString: backgroundColor).cgColor
         }
         
         if let borderWidth = data["borderWidth"] as? Double{

@@ -73,7 +73,7 @@ public class NativeAdmobFlutterPlugin: NSObject, FlutterPlugin {
       
       // General
       case "isTestDevice":
-        result(true)
+        result(false)
       
       case "setTestDeviceIds":
         GADMobileAds
