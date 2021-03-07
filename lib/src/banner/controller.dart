@@ -158,17 +158,15 @@ class BannerAdController extends LoadShowAd<BannerAdEvent>
   /// ```
   ///
   /// For more info, [read the documentation](https://github.com/bdlukaa/native_admob_flutter/wiki/Using-the-controller-and-listening-to-banner-events#listening-to-events)
-  Stream<Map<BannerAdEvent, dynamic>> get onEvent =>
-      super.onEvent as Stream<Map<BannerAdEvent, dynamic>>;
+  Stream<Map<BannerAdEvent, dynamic>> get onEvent => super.onEvent;
+
+  bool _loaded = false;
+
+  /// Returns true if the ad was successfully loaded and is ready to be rendered.
+  bool get isLoaded => _loaded;
 
   /// Creates a new native ad controller
-  BannerAdController({
-    Duration loadTimeout = kDefaultLoadTimeout,
-    Duration timeout = kDefaultAdTimeout,
-  }) : super(
-          loadTimeout: loadTimeout,
-          timeout: timeout,
-        );
+  BannerAdController({Duration loadTimeout}) : super(loadTimeout: loadTimeout);
 
   /// Initialize the controller. This can be called only by the controller
   void init() {
@@ -199,17 +197,17 @@ class BannerAdController extends LoadShowAd<BannerAdEvent>
     if (isDisposed) return;
     switch (call.method) {
       case 'loading':
-        isLoaded = false;
+        _loaded = false;
         onEventController.add({BannerAdEvent.loading: null});
         break;
       case 'onAdFailedToLoad':
-        isLoaded = false;
+        _loaded = false;
         onEventController.add({
           BannerAdEvent.loadFailed: AdError.fromJson(call.arguments),
         });
         break;
       case 'onAdLoaded':
-        isLoaded = true;
+        _loaded = true;
         onEventController.add({BannerAdEvent.loaded: call.arguments});
         break;
       case 'onAdImpression':
@@ -227,14 +225,14 @@ class BannerAdController extends LoadShowAd<BannerAdEvent>
     /// Force to load an ad even if another is already avaiable
     bool force = false,
 
-    /// The timeout of this ad. If null, defaults to 30 seconds
-    Duration? timeout,
+    /// The timeout of this ad. If null, defaults to `Duration(seconds: 30)`
+    Duration timeout,
   }) async {
     ensureAdNotDisposed();
     assertMobileAdsIsInitialized();
     if (!debugCheckAdWillReload(isLoaded, force)) return false;
-    isLoaded = (await channel.invokeMethod<bool>('loadAd').timeout(
-      timeout ?? this.loadTimeout,
+    _loaded = await channel.invokeMethod<bool>('loadAd').timeout(
+      timeout ?? this.loadTimeout ?? kDefaultLoadTimeout,
       onTimeout: () {
         if (!onEventController.isClosed)
           onEventController.add({
@@ -242,7 +240,7 @@ class BannerAdController extends LoadShowAd<BannerAdEvent>
           });
         return false;
       },
-    ))!;
+    );
     return isLoaded;
   }
 }

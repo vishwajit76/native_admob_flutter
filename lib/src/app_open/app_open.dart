@@ -59,8 +59,25 @@ class AppOpenAd extends LoadShowAd<FullScreenAdEvent> {
   /// ```
   ///
   /// For more info, [read the documentation](https://github.com/bdlukaa/native_admob_flutter/wiki/Creating-an-app-open-ad#ad-events)
-  Stream<Map<FullScreenAdEvent, dynamic>> get onEvent =>
-      super.onEvent as Stream<Map<FullScreenAdEvent, dynamic>>;
+  Stream<Map<FullScreenAdEvent, dynamic>> get onEvent => super.onEvent;
+
+  bool _isAvaiable = false;
+
+  DateTime _lastLoadedTime;
+
+  /// Check if the ad is avaiable. Default to `false`
+  ///
+  /// This turns `true` when the ad is loaded
+  ///
+  /// If the timeout time is over since the last time it was loaded
+  /// thne it'll return `false`
+  bool get isAvaiable {
+    if (_lastLoadedTime != null && timeout != null) {
+      final difference = _lastLoadedTime.difference(DateTime.now());
+      if (difference > timeout) return false;
+    }
+    return _isAvaiable;
+  }
 
   bool _isShowing = false;
 
@@ -69,18 +86,21 @@ class AppOpenAd extends LoadShowAd<FullScreenAdEvent> {
   /// For more info, read the [documentation](https://github.com/bdlukaa/native_admob_flutter/wiki/Creating-an-app-open-ad#show-the-ad)
   bool get isShowing => _isShowing;
 
+  /// The duration a ad can be kept loaded. Default to 1 hour.
+  /// This can NOT be null. If so, an `AssertionError` is thrown
+  ///
+  /// For more info, read the [documentation](https://github.com/bdlukaa/native_admob_flutter/wiki/Creating-an-app-open-ad#consider-ad-expiration)
+  final Duration timeout;
+
   /// Creates a new AppOpenAd instance.
   ///
   /// For more info, read the [documentation](https://github.com/bdlukaa/native_admob_flutter/wiki/Creating-an-app-open-ad#creating-an-ad-object)
   AppOpenAd({
-    Duration loadTimeout = kDefaultLoadTimeout,
-    Duration timeout = kDefaultAdTimeout,
-    String? unitId,
-  }) : super(
-          unitId: unitId,
-          loadTimeout: loadTimeout,
-          timeout: timeout,
-        );
+    this.timeout = const Duration(hours: 1),
+    Duration loadTimeout,
+    String unitId,
+  })  : assert(timeout != null, 'The timeout time can NOT be null'),
+        super(unitId: unitId, loadTimeout: loadTimeout);
 
   void init() {
     channel.setMethodCallHandler(_handleMessages);
@@ -91,21 +111,19 @@ class AppOpenAd extends LoadShowAd<FullScreenAdEvent> {
     if (isDisposed) return;
     switch (call.method) {
       case 'loading':
-        isLoaded = false;
         onEventController.add({FullScreenAdEvent.loading: null});
         break;
       case 'onAppOpenAdFailedToLoad':
-        isLoaded = false;
         onEventController.add({
           FullScreenAdEvent.loadFailed: AdError.fromJson(call.arguments),
         });
         break;
       case 'onAppOpenAdLoaded':
-        isLoaded = true;
+        _isAvaiable = true;
         onEventController.add({FullScreenAdEvent.loaded: null});
         break;
       case 'onAdDismissedFullScreenContent':
-        isLoaded = false;
+        _isAvaiable = false;
         _isShowing = false;
         onEventController.add({FullScreenAdEvent.closed: null});
         break;
@@ -129,24 +147,24 @@ class AppOpenAd extends LoadShowAd<FullScreenAdEvent> {
   /// For more info, [read the documentation](https://github.com/bdlukaa/native_admob_flutter/wiki/Creating-an-app-open-ad#load-the-ad)
   Future<bool> load({
     /// The ad unit id. If null, [MobileAds.appOpenAdUnitId] is used
-    String? unitId,
+    String unitId,
 
     /// The orientation. Avaiable orientations:\
     /// 1 - [APP_OPEN_AD_ORIENTATION_PORTRAIT]\
     /// 2 - [APP_OPEN_AD_ORIENTATION_LANDSCAPE]\
     ///
     /// If null, defaults to the current device orientation
-    int? orientation,
+    int orientation,
 
     /// Force to load an ad even if another is already avaiable
     bool force = false,
 
     /// The timeout of this ad. If null, defaults to `Duration(seconds: 30)`
-    Duration? timeout,
+    Duration timeout,
   }) async {
     ensureAdNotDisposed();
     assertMobileAdsIsInitialized();
-    if (!debugCheckAdWillReload(isLoaded, force)) return false;
+    if (!debugCheckAdWillReload(isAvaiable, force)) return false;
     if (orientation != null)
       assert(
         [
@@ -156,7 +174,7 @@ class AppOpenAd extends LoadShowAd<FullScreenAdEvent> {
         'The orientation must be a valid orientation: $APP_OPEN_AD_ORIENTATION_PORTRAIT, $APP_OPEN_AD_ORIENTATION_LANDSCAPE',
       );
     else {
-      final window = WidgetsBinding.instance!.window;
+      final window = WidgetsBinding.instance.window;
       final size = window.physicalSize / window.devicePixelRatio;
       final deviceOrientation = size.width > size.height
           ? Orientation.landscape
@@ -171,14 +189,14 @@ class AppOpenAd extends LoadShowAd<FullScreenAdEvent> {
           break;
       }
     }
-    final loaded = await (channel.invokeMethod<bool>('loadAd', {
+    final loaded = await channel.invokeMethod<bool>('loadAd', {
       'unitId': unitId ??
           this.unitId ??
           MobileAds.appOpenAdUnitId ??
           MobileAds.appOpenAdTestUnitId,
       'orientation': orientation,
     }).timeout(
-      timeout ?? this.loadTimeout,
+      timeout ?? this.loadTimeout ?? kDefaultLoadTimeout,
       onTimeout: () {
         if (!onEventController.isClosed)
           onEventController.add({
@@ -186,8 +204,8 @@ class AppOpenAd extends LoadShowAd<FullScreenAdEvent> {
           });
         return false;
       },
-    ) as FutureOr<bool>);
-    if (loaded) lastLoadedTime = DateTime.now();
+    );
+    if (loaded) _lastLoadedTime = DateTime.now();
     return loaded;
   }
 
@@ -207,11 +225,15 @@ class AppOpenAd extends LoadShowAd<FullScreenAdEvent> {
   /// ```
   ///
   /// For more info, [read the documentation](https://github.com/bdlukaa/native_admob_flutter/wiki/Creating-an-app-open-ad#show-the-ad)
-  Future<bool> show() async {
+  Future<bool> show() {
     ensureAdNotDisposed();
     assertMobileAdsIsInitialized();
-    ensureAdAvailable();
-    return (await channel.invokeMethod<bool>('showAd'))!;
+    assert(
+      isAvaiable,
+      'Can NOT show an ad that is not loaded. '
+      'Call await appOpenAd.load() before showing it',
+    );
+    return channel.invokeMethod<bool>('showAd');
   }
 
   /// Dispose the ad to free up resouces.

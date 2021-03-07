@@ -10,7 +10,7 @@ final rewardedAd = RewardedAd()..load();
 final AppOpenAd appOpenAd = AppOpenAd(timeout: Duration(seconds: 5))..load();
 
 class FullScreenAds extends StatefulWidget {
-  const FullScreenAds({Key? key}) : super(key: key);
+  const FullScreenAds({Key key}) : super(key: key);
 
   @override
   _FullScreenAdsState createState() => _FullScreenAdsState();
@@ -49,13 +49,14 @@ class _FullScreenAdsState extends State<FullScreenAds> {
       child: ListView(
         shrinkWrap: true,
         children: [
-          TextButton(
+          FlatButton(
             child: Text('Show interstitial ad'),
+            color: Colors.yellow,
             onLongPress: () => interstitialAd.load(force: true),
             onPressed: () async {
               // Load only if not loaded
-              if (!interstitialAd.isAvailable) await interstitialAd.load();
-              if (interstitialAd.isAvailable) {
+              if (!interstitialAd.isLoaded) await interstitialAd.load();
+              if (interstitialAd.isLoaded) {
                 await interstitialAd.show();
 
                 /// You can also load a new ad here, because the `show()` will
@@ -64,19 +65,20 @@ class _FullScreenAdsState extends State<FullScreenAds> {
               }
             },
           ),
-          TextButton(
+          FlatButton(
             child: Text('Show interstitial video ad'),
+            color: Colors.amber,
             onLongPress: () => interstitialVideoAd.load(
               unitId: MobileAds.interstitialAdVideoTestUnitId,
               force: true,
             ),
             onPressed: () async {
               // Load only if not loaded
-              if (!interstitialVideoAd.isAvailable)
+              if (!interstitialVideoAd.isLoaded)
                 await interstitialVideoAd.load(
                   unitId: MobileAds.interstitialAdVideoTestUnitId,
                 );
-              if (interstitialVideoAd.isAvailable) {
+              if (interstitialVideoAd.isLoaded) {
                 await interstitialVideoAd.show();
                 interstitialVideoAd.load(
                   unitId: MobileAds.interstitialAdVideoTestUnitId,
@@ -84,21 +86,23 @@ class _FullScreenAdsState extends State<FullScreenAds> {
               }
             },
           ),
-          TextButton(
+          FlatButton(
             child: Text('Show rewarded ad'),
+            color: Colors.redAccent,
             onLongPress: () => rewardedAd.load(force: true),
             onPressed: () async {
-              if (!rewardedAd.isAvailable) await rewardedAd.load();
+              if (!rewardedAd.isLoaded) await rewardedAd.load();
               await rewardedAd.show();
               rewardedAd.load();
             },
           ),
-          TextButton(
+          FlatButton(
             child: Text('Show App Open Ad'),
+            color: Colors.lime,
             onLongPress: () => appOpenAd.load(force: true),
             onPressed: () async {
-              if (!appOpenAd.isAvailable) await appOpenAd.load();
-              if (appOpenAd.isAvailable) {
+              if (!appOpenAd.isAvaiable) await appOpenAd.load();
+              if (appOpenAd.isAvaiable) {
                 await appOpenAd.show();
                 appOpenAd.load();
               }
