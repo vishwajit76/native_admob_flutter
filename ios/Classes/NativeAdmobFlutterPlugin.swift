@@ -1,6 +1,8 @@
 import Flutter
 import UIKit
 import GoogleMobileAds
+import AppTrackingTransparency
+import AdSupport
 
 
 let controllerManager = InterstitialAdControllerManager.shared
@@ -124,6 +126,15 @@ public class NativeAdmobFlutterPlugin: NSObject, FlutterPlugin {
       case "setAppMuted":
         GADMobileAds.sharedInstance().applicationMuted = params?["muted"]as! Bool
         result(nil)
+        
+      case "requestTrackingAuthorization":
+        if #available(iOS 14, *) {
+            ATTrackingManager.requestTrackingAuthorization(completionHandler: { status in
+                result(Int(status.rawValue))
+            })
+        } else {
+          result(nil)
+        }
 
       default:
         result(FlutterMethodNotImplemented)
