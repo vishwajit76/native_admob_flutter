@@ -51,12 +51,22 @@ class RewardedAdController: NSObject,GADFullScreenContentDelegate {
             }
         case "show" :
             if (self.rewardedAd == nil){ return result(false)}
-            self.rewardedAd.present(fromRootViewController: (UIApplication.shared.keyWindow?.rootViewController)!){ () in
-                self.channel.invokeMethod("onUserEarnedReward", arguments: [
-                    "amount":self.rewardedAd.adReward.amount,
-                    "type":self.rewardedAd.adReward.type
-                ])
-            }
+                self.rewardedAd.present(fromRootViewController: (UIApplication.shared.keyWindow?.rootViewController)!,
+                   userDidEarnRewardHandler: {
+                     
+                     // TODO: Reward the user.
+                     self.channel.invokeMethod("onUserEarnedReward", arguments: [
+                        "amount":self.rewardedAd.adReward.amount,
+                        "type":self.rewardedAd.adReward.type
+                     ])
+                   }
+                )
+//             self.rewardedAd.present(fromRootViewController: (UIApplication.shared.keyWindow?.rootViewController)!){ () in
+//                 self.channel.invokeMethod("onUserEarnedReward", arguments: [
+//                     "amount":self.rewardedAd.adReward.amount,
+//                     "type":self.rewardedAd.adReward.type
+//                 ])
+//             }
             
         default: 
             result(FlutterMethodNotImplemented)
